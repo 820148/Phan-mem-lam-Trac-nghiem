@@ -1,0 +1,319 @@
+
+Điểm nổi bật trong thư mục
+HTML chứa mã nguồn cho phần mềm thi trắc nghiệm với chức năng đếm giờ và chấm điểm tự động, sẵn sàng cho bài thi.
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Phần mềm thi trắc nghiệm</title>
+
+<style>
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+    background: #f8f9fa;
+}
+
+/* ===== TRANG NHẬP ===== */
+#setup {
+    padding: 12px;
+    max-width: 600px;
+    margin: auto;
+}
+
+textarea {
+    width: 100%;
+    height: 200px;
+    font-size: 15px;
+    line-height: 1.4;
+}
+
+/* ===== TRANG THI ===== */
+#examPage { height: 100%; }
+
+#examContainer {
+    height: calc(100vh - 180px);
+    overflow-y: auto;
+    padding: 12px;
+    max-width: 600px;
+    margin: auto;
+}
+
+/* ===== TIÊU ĐỀ ===== */
+.exam-title {
+    text-align: center;
+    padding-top: 12px;
+    margin-bottom: 0;
+}
+
+/* ===== ĐỒNG HỒ ===== */
+.timer {
+    margin: 8px auto 12px auto;
+    width: fit-content;
+    background: #ffeeba;
+    padding: 8px 14px;
+    font-size: 26px;
+    font-weight: bold;
+    color: #d00000;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+/* ===== CÂU HỎI ===== */
+.question {
+    margin-bottom: 18px;
+    padding: 10px;
+    border-radius: 6px;
+    background: #ffffff;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+    line-height: 1.45;
+    font-size: 16px;
+}
+
+.question b {
+    display: block;
+    margin-bottom: 8px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+/* ===== ĐÁNH DẤU ===== */
+.unanswered { border: 3px solid red; }
+.correct { background-color: #d4edda; }
+.wrong { background-color: #f8d7da; }
+
+/* ===== ĐÁP ÁN SAU KHI NỘP ===== */
+.selected-correct {
+    color: #0a8a2a;
+    font-weight: bold;
+}
+
+.selected-wrong {
+    color: #c00000;
+    font-weight: bold;
+}
+
+.correct-answer {
+    color: green;
+    font-weight: bold;
+    margin-top: 6px;
+}
+
+/* ===== KHỐI ĐIỂM ===== */
+.score-box {
+    margin-top: 20px;
+    padding: 18px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+.score-box h2 {
+    margin: 0;
+    font-size: 28px;
+    color: #003366;
+}
+
+.score-box .percent {
+    font-size: 44px;
+    font-weight: bold;
+    color: #d00000;
+    margin: 10px 0;
+}
+
+/* ===== NÚT ===== */
+button {
+    padding: 10px 18px;
+    margin: 6px 4px;
+    font-size: 15px;
+    border-radius: 6px;
+}
+
+.hidden { display: none; }
+</style>
+</head>
+
+<body>
+
+<!-- ===== TRANG NHẬP ===== -->
+<div id="setup">
+<h2>PHẦN MỀM THI TRẮC NGHIỆM</h2>
+
+<textarea id="inputText" placeholder="Dán câu hỏi tại đây"></textarea>
+
+<br><br>
+<label>⏱ Thời gian làm bài (phút): </label>
+<input type="number" id="timeLimit" value="10" min="1">
+
+<br><br>
+<button onclick="startExam()">Tạo đề thi</button>
+</div>
+
+<!-- ===== TRANG THI ===== -->
+<div id="examPage" class="hidden">
+
+<h2 class="exam-title">ĐỀ THI TRẮC NGHIỆM</h2>
+<div class="timer" id="timer"></div>
+
+<div id="examContainer">
+    <div id="exam"></div>
+
+    <button onclick="checkProgress()">Kiểm tra bài làm</button>
+    <button onclick="submitExam()">Nộp bài</button>
+
+    <div id="result"></div>
+</div>
+</div>
+
+<script>
+let answers = {};
+let correct = {};
+let optionsStore = {};
+let timeLeft;
+let timerInterval;
+let submitted = false;
+
+function startExam() {
+    document.getElementById("setup").classList.add("hidden");
+    document.getElementById("examPage").classList.remove("hidden");
+
+    let text = document.getElementById("inputText").value.trim();
+    let minutes = parseInt(document.getElementById("timeLimit").value);
+    timeLeft = minutes * 60;
+
+    let blocks = text.split(/\n\s*\n/);
+
+    blocks.forEach((block, index) => {
+        let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+
+        let questionLines = [];
+        let options = {};
+        let answer = "";
+
+        lines.forEach(line => {
+            if (/^[ABCD]\./.test(line)) {
+                options[line[0]] = line;
+            } else if (line.startsWith("Đáp án")) {
+                answer = line.split(":")[1].trim();
+            } else {
+                questionLines.push(line);
+            }
+        });
+
+        if (!answer || Object.keys(options).length < 4) return;
+
+        correct[index] = answer;
+        optionsStore[index] = options;
+
+        let html = `<div class="question" id="q${index}">
+            <b>${questionLines.join("<br>")}</b>`;
+
+        ["A","B","C","D"].forEach(k => {
+            html += `<label>
+                <input type="radio" name="q${index}" value="${k}"
+                onchange="answers[${index}]='${k}'">
+                ${options[k]}
+            </label>`;
+        });
+
+        html += `</div>`;
+        document.getElementById("exam").innerHTML += html;
+    });
+
+    startTimer();
+}
+
+function startTimer() {
+    timerInterval = setInterval(() => {
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        document.getElementById("timer").innerText =
+            `${m}:${s < 10 ? "0" : ""}${s}`;
+
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert("⏰ Hết giờ! Bài thi sẽ được nộp.");
+            submitExam();
+        }
+        timeLeft--;
+    }, 1000);
+}
+
+function checkProgress() {
+    let total = Object.keys(correct).length;
+    let done = 0;
+
+    for (let i in correct) {
+        let qDiv = document.getElementById("q" + i);
+        qDiv.classList.remove("unanswered");
+        if (answers[i]) done++;
+        else qDiv.classList.add("unanswered");
+    }
+
+    alert(`Đã làm: ${done}/${total}`);
+}
+
+function submitExam() {
+    if (submitted) return;
+    submitted = true;
+
+    clearInterval(timerInterval);
+
+    let total = Object.keys(correct).length;
+    let score = 0;
+
+    for (let i in correct) {
+        let qDiv = document.getElementById("q" + i);
+        let radios = qDiv.querySelectorAll("input");
+
+        radios.forEach(r => {
+            r.disabled = true;
+            let label = r.parentElement;
+
+            if (r.checked) {
+                if (r.value === correct[i]) {
+                    label.classList.add("selected-correct");
+                } else {
+                    label.classList.add("selected-wrong");
+                }
+            }
+        });
+
+        if (answers[i] === correct[i]) {
+            score++;
+            qDiv.classList.add("correct");
+        } else {
+            qDiv.classList.add("wrong");
+            qDiv.innerHTML += `
+                <div class="correct-answer">
+                    ✔ Đáp án đúng: ${optionsStore[i][correct[i]]}
+                </div>`;
+        }
+    }
+
+    let percent = ((score / total) * 100).toFixed(1);
+
+    document.getElementById("result").innerHTML = `
+        <div class="score-box">
+            <h2>KẾT QUẢ BÀI THI</h2>
+            <div class="percent">${percent}%</div>
+            <div>Số câu đúng: <b>${score}/${total}</b></div>
+        </div>
+    `;
+}
+</script>
+
+</body>
+</html>
