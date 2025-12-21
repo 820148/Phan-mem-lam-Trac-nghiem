@@ -117,6 +117,8 @@ function prepareExam(){
     document.getElementById("preTime").innerText = "Thời gian làm bài: "+minutes+" phút";
 }
 
+// ... (Giữ nguyên phần đầu cho đến hàm startExam)
+
 function startExam(){
     document.getElementById("preExam").style.display="none";
     document.getElementById("examPage").style.display="block";
@@ -146,30 +148,21 @@ function startExam(){
         html+="</div>";
         examHtml+=html;
     });
-    document.getElementById("exam").innerHTML=examHtml;
-    MathJax.typesetPromise(); // Render tất cả LaTeX
+    
+    const examDiv = document.getElementById("exam");
+    examDiv.innerHTML = examHtml;
+
+    // Đảm bảo MathJax quét lại toàn bộ nội dung mới
+    if (window.MathJax) {
+        MathJax.typesetPromise([examDiv]).catch(function (err) {
+            console.log('MathJax failed: ' + err.message);
+        });
+    }
+    
     startTimer();
 }
 
-function startTimer(){
-    timerInterval=setInterval(()=>{
-        let m=Math.floor(timeLeft/60), s=timeLeft%60;
-        document.getElementById("timer").innerText=`${m}:${s<10?"0":""}${s}`;
-        if(timeLeft<=0){ clearInterval(timerInterval); alert("⏰ Hết giờ! Bài thi sẽ được nộp."); submitExam(); }
-        timeLeft--;
-    },1000);
-}
-
-function checkProgress(){
-    let total=Object.keys(correct).length, done=0;
-    for(let i in correct){
-        let qDiv=document.getElementById("q"+i);
-        qDiv.classList.remove("unanswered");
-        if(answers[i]) done++;
-        else qDiv.classList.add("unanswered");
-    }
-    alert(`Đã làm: ${done}/${total}`);
-}
+// ...
 
 function submitExam(){
     if(submitted) return;
@@ -189,7 +182,14 @@ function submitExam(){
             }
         });
         if(answers[i]===correct[i]){ score++; qDiv.classList.add("correct"); }
-        else{ qDiv.classList.add("wrong"); qDiv.innerHTML+=`<div class="correct-answer">✔ Đáp án đúng: ${optionsStore[i][correct[i]]}</div>`; }
+        else{ 
+            qDiv.classList.add("wrong"); 
+            // Thêm phần tử chứa đáp án đúng vào cuối div câu hỏi
+            let correctDiv = document.createElement("div");
+            correctDiv.className = "correct-answer";
+            correctDiv.innerHTML = `✔ Đáp án đúng: ${optionsStore[i][correct[i]]}`;
+            qDiv.appendChild(correctDiv);
+        }
     }
 
     let percent=((score/total)*100).toFixed(1);
@@ -197,26 +197,13 @@ function submitExam(){
     document.getElementById("backBtn").classList.remove("hidden");
     document.getElementById("exportPDF").classList.remove("hidden");
 
-    MathJax.typesetPromise();
-}
-
-function goBack(){ location.reload(); }
-
-async function exportPDF(){
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFont("helvetica");
-    doc.setFontSize(14);
-    doc.text(`Môn thi: ${document.getElementById("subject").value}`,10,20);
-    doc.text(`Thời gian làm bài: ${document.getElementById("timeLimit").value} phút`,10,30);
-    let y=40;
-    for(let i in correct){
-        let userAnswer = answers[i]?answers[i]:"";
-        let correctAnswer = correct[i];
-        doc.text(`Câu ${parseInt(i)+1}: ${userAnswer} (Đáp án: ${correctAnswer})`,10,y);
-        y+=10;
-        if(y>270){ doc.addPage(); y=20; }
+    // Render lại LaTeX cho phần kết quả và các đáp án đúng vừa hiện ra
+    if (window.MathJax) {
+        MathJax.typesetPromise().catch(function (err) {
+            console.log(err.message);
+        });
     }
+}
     doc.save("ketqua.pdf");
 }
 </script>
