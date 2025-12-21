@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Phần mềm thi trắc nghiệm</title>
+    <title>Phần mềm thi trắc nghiệm - Hỗ trợ LaTeX đầy đủ</title>
 
     <script>
         window.MathJax = {
@@ -11,79 +11,64 @@
                 inlineMath: [['$', '$'], ['\\(', '\\)']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true,
-                processEnvironments: true
+                packages: {'[+]': ['base', 'ams', 'noerrors', 'noundefined']}
             },
             options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
             },
-            svg: { fontCache: 'global' }
+            loader: {load: ['[tex]/ams', '[tex]/noerrors', '[tex]/noundefined']}
         };
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
-        html, body { margin:0; font-family: Arial, sans-serif; background:#f8f9fa; }
-        #setup, #preExam, #examPage { max-width:700px; margin:auto; padding:12px; }
-        textarea { width:100%; height:200px; font-size:15px; line-height:1.4; border-radius: 8px; border: 1px solid #ccc; padding: 10px; }
-        #preExam { text-align:center; padding-top:80px; display:none; }
-        #preExam button { font-size:28px; padding:20px 40px; cursor: pointer; }
-        #examPage { display:none; }
-        .top-bar { display:flex; justify-content:space-between; align-items:center; margin:8px 0; flex-wrap:wrap; position: sticky; top: 0; background: #f8f9fa; z-index: 10; padding: 10px 0; }
-        .timer { background:#ffeeba; padding:8px 14px; font-size:26px; font-weight:bold; color:#d00000; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.25); }
-        .question { margin-bottom:18px; padding:15px; border-radius:8px; background:#fff; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .question b { display:block; margin-bottom:10px; font-size: 1.1em; }
-        label { display:block; margin-bottom:8px; font-size:15px; cursor: pointer; padding: 5px; border-radius: 4px; }
-        label:hover { background: #f0f0f0; }
-        .unanswered { border:2px solid red; }
-        .correct { border-left: 5px solid #28a745; }
-        .wrong { border-left: 5px solid #dc3545; }
-        .selected-correct { color:#0a8a2a; font-weight:bold; background: #eaffea; }
-        .selected-wrong { color:#c00000; font-weight:bold; background: #ffeaea; }
-        .correct-answer { color:green; font-weight:bold; margin-top:10px; padding: 5px; background: #e8f5e9; border-radius: 4px; }
-        .score-box { margin-bottom:20px; padding:18px; background:#fff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.15); text-align:center; }
-        .percent { font-size:44px; font-weight:bold; color:#d00000; margin:10px 0; }
-        button { padding:10px 18px; margin:6px 4px; font-size:15px; border-radius:6px; cursor:pointer; border:1px solid #ccc; background: #fff; }
-        button:hover { background: #eee; }
-        .btn-primary { background: #007bff; color: white; border: none; }
-        .hidden { display:none; }
-        /* Đảm bảo công thức toán không bị tràn màn hình mobile */
-        mjx-container { max-width: 100% !important; overflow-x: auto !important; overflow-y: hidden !important; }
+        html, body { margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f0f2f5; }
+        #setup, #preExam, #examPage { max-width:800px; margin:auto; padding:20px; }
+        textarea { width:100%; height:250px; font-size:15px; border-radius: 8px; border: 1px solid #ccc; padding: 12px; box-sizing: border-box; }
+        #preExam, #examPage { display:none; }
+        .question { margin-bottom:20px; padding:20px; border-radius:10px; background:#fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .question b { display:block; margin-bottom:12px; font-size: 1.15em; color: #1a1a1a; }
+        label { display:block; margin: 10px 0; padding: 12px; border: 1px solid #eee; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        label:hover { background: #f8f9fa; border-color: #007bff; }
+        .timer { background:#dc3545; color:#fff; padding:10px 20px; font-size:24px; font-weight:bold; border-radius:30px; }
+        .top-bar { display:flex; justify-content:space-between; align-items:center; position: sticky; top: 0; background: rgba(240,242,245,0.9); z-index: 100; padding: 10px 0; }
+        .correct { border-left: 6px solid #28a745; background: #f4fff4; }
+        .wrong { border-left: 6px solid #dc3545; background: #fff4f4; }
+        .selected-correct { color:#155724; font-weight:bold; background: #d4edda; }
+        .selected-wrong { color:#721c24; font-weight:bold; background: #f8d7da; }
+        .correct-answer { color:#28a745; font-weight:bold; margin-top:10px; border-top: 1px dashed #ccc; padding-top: 5px; }
+        .btn-primary { background: #007bff; color: white; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-primary:hover { background: #0056b3; }
+        mjx-container { font-size: 110% !important; }
     </style>
 </head>
-<body>
+<body class="tex2jax_process">
 
 <div id="setup">
-    <h2>PHẦN MỀM THI TRẮC NGHIỆM</h2>
-    <label>Môn thi:</label>
-    <input type="text" id="subject" style="width:100%; padding:8px;" placeholder="Ví dụ: Toán Giải Tích">
+    <h2>🛠 CẤU HÌNH ĐỀ THI</h2>
+    <label>Tên bài thi:</label>
+    <input type="text" id="subject" style="width:100%; padding:10px;" placeholder="Nhập tên môn học...">
     <br><br>
-    <label>⏱ Thời gian làm bài (phút):</label>
-    <input type="number" id="timeLimit" value="10" min="1" style="padding:8px;">
+    <label>⏱ Thời gian (phút):</label>
+    <input type="number" id="timeLimit" value="15" style="padding:10px;">
     <br><br>
-    <label>Đề thi (Mỗi câu cách nhau 1 dòng trống):</label>
-    <textarea id="inputText" placeholder="Ví dụ:
-Câu 1: Tính tích phân $\int_{0}^{1} x^2 dx$
-A. 1/3
-B. 1/2
-C. 1
-D. 0
-Đáp án: A"></textarea>
+    <label>Nội dung đề thi (Dán câu hỏi của bạn vào đây):</label>
+    <textarea id="inputText" placeholder="Câu 1: Diện tích $24 \text{ cm}^2$ ..."></textarea>
     <br>
-    <button class="btn-primary" onclick="prepareExam()">Tạo đề thi</button>
+    <button class="btn-primary" onclick="prepareExam()">TẠO ĐỀ THI</button>
 </div>
 
 <div id="preExam">
     <h2 id="preSubject"></h2>
-    <p id="preTime"></p>
-    <button class="btn-primary" onclick="startExam()">Bắt đầu làm bài</button>
+    <p id="preTime" style="font-size: 1.2em;"></p>
+    <button class="btn-primary" style="font-size: 1.5em;" onclick="startExam()">BẮT ĐẦU LÀM BÀI</button>
 </div>
 
 <div id="examPage">
     <div class="top-bar">
         <div>
-            <button onclick="checkProgress()">Kiểm tra</button>
-            <button class="btn-primary" onclick="submitExam()">Nộp bài</button>
-            <button id="backBtn" class="hidden" onclick="goBack()">Làm lại</button>
+            <button class="btn-primary" onclick="submitExam()">NỘP BÀI</button>
         </div>
         <div class="timer" id="timer">00:00</div>
     </div>
@@ -91,59 +76,51 @@ D. 0
     <div id="exam"></div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 let answers={}, correct={}, optionsStore={}, timeLeft, timerInterval, submitted=false;
 
 function prepareExam(){
-    const subject = document.getElementById("subject").value.trim();
+    const subject = document.getElementById("subject").value.trim() || "Bài thi trắc nghiệm";
     const minutes = parseInt(document.getElementById("timeLimit").value);
     const text = document.getElementById("inputText").value.trim();
-    
-    if(!subject || !minutes || !text){ alert("Vui lòng nhập đầy đủ thông tin và nội dung đề thi!"); return; }
-    
+    if(!text){ alert("Vui lòng nhập đề thi!"); return; }
     document.getElementById("setup").style.display="none";
     document.getElementById("preExam").style.display="block";
-    document.getElementById("preSubject").innerText = "Môn thi: " + subject;
-    document.getElementById("preTime").innerText = "Thời gian làm bài: " + minutes + " phút";
+    document.getElementById("preSubject").innerText = subject;
+    document.getElementById("preTime").innerText = "Thời gian: " + minutes + " phút";
 }
 
 function startExam() {
-    // 1. Chuyển đổi giao diện
     document.getElementById("preExam").style.display = "none";
-    const examPage = document.getElementById("examPage");
-    examPage.style.display = "block";
-
-    // 2. Lấy dữ liệu và thiết lập thời gian
+    document.getElementById("examPage").style.display = "block";
     let text = document.getElementById("inputText").value.trim();
-    let minutes = parseInt(document.getElementById("timeLimit").value);
-    timeLeft = minutes * 60;
+    timeLeft = parseInt(document.getElementById("timeLimit").value) * 60;
 
-    // 3. Tách các câu hỏi (bằng dòng trống)
     const blocks = text.split(/\n\s*\n/);
     let examHtml = "";
 
     blocks.forEach((block, index) => {
         let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
-        let questionLines = [], options = {}, answer = "";
+        let questionLines = [], options = {}, answerFound = "";
 
         lines.forEach(line => {
-            if (/^[A-D]\./.test(line)) {
-                options[line[0]] = line;
-            } else if (line.toLowerCase().startsWith("đáp án")) {
+            if (/^[A-D]\./i.test(line)) {
+                let label = line[0].toUpperCase();
+                options[label] = line;
+            } else if (line.toLowerCase().includes("đáp án")) {
                 let parts = line.split(":");
-                if (parts[1]) answer = parts[1].trim();
+                if (parts[1]) answerFound = parts[1].trim().toUpperCase().charAt(0);
             } else {
                 questionLines.push(line);
             }
         });
 
-        if (!answer || Object.keys(options).length < 2) return;
+        if (!answerFound) return;
 
-        correct[index] = answer;
+        correct[index] = answerFound;
         optionsStore[index] = options;
 
-        let html = `<div class="question" id="q${index}"><b>Câu ${index + 1}: ${questionLines.join("<br>")}</b>`;
+        let html = `<div class="question" id="q${index}"><b>${questionLines.join("<br>")}</b>`;
         ["A", "B", "C", "D"].forEach(k => {
             if (options[k]) {
                 html += `<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
@@ -156,13 +133,12 @@ function startExam() {
     const examDiv = document.getElementById("exam");
     examDiv.innerHTML = examHtml;
 
-    // 4. Kỹ thuật Render LaTeX an toàn
-    if (window.MathJax && MathJax.typesetPromise) {
+    // Kích hoạt MathJax render
+    if (window.MathJax) {
         setTimeout(() => {
-            MathJax.typesetPromise([examDiv]).catch((err) => console.log(err));
+            MathJax.typesetPromise([examDiv]).catch(err => console.log(err));
         }, 100);
     }
-
     startTimer();
 }
 
@@ -170,74 +146,52 @@ function startTimer(){
     timerInterval = setInterval(() => {
         let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
         document.getElementById("timer").innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
-        if(timeLeft <= 0){ 
-            clearInterval(timerInterval); 
-            alert("⏰ Hết giờ!"); 
-            submitExam(); 
-        }
+        if(timeLeft <= 0){ clearInterval(timerInterval); submitExam(); }
         timeLeft--;
     }, 1000);
-}
-
-function checkProgress(){
-    let total = Object.keys(correct).length, done = 0;
-    for(let i in correct){
-        let qDiv = document.getElementById("q" + i);
-        if(answers[i]) {
-            done++;
-            qDiv.classList.remove("unanswered");
-        } else {
-            qDiv.classList.add("unanswered");
-        }
-    }
-    alert(`Bạn đã hoàn thành: ${done}/${total} câu.`);
 }
 
 function submitExam(){
     if(submitted) return;
     submitted = true;
     clearInterval(timerInterval);
-
     let total = Object.keys(correct).length, score = 0;
+    
     for(let i in correct){
         let qDiv = document.getElementById("q" + i);
-        let radios = qDiv.querySelectorAll("input");
+        let selected = answers[i];
         
-        radios.forEach(r => {
-            r.disabled = true;
-            let label = r.parentElement;
-            if(r.checked){
-                if(r.value === correct[i]) label.classList.add("selected-correct");
-                else label.classList.add("selected-wrong");
+        if(selected === correct[i]){
+            score++;
+            qDiv.classList.add("correct");
+        } else {
+            qDiv.classList.add("wrong");
+            let div = document.createElement("div");
+            div.className = "correct-answer";
+            div.innerHTML = "✔ Đáp án đúng: " + (optionsStore[i][correct[i]] || correct[i]);
+            qDiv.appendChild(div);
+        }
+
+        qDiv.querySelectorAll("input").forEach(input => {
+            input.disabled = true;
+            if(input.value === selected){
+                input.parentElement.classList.add(selected === correct[i] ? "selected-correct" : "selected-wrong");
             }
         });
-
-        if(answers[i] === correct[i]){ 
-            score++; 
-            qDiv.classList.add("correct"); 
-        } else { 
-            qDiv.classList.add("wrong"); 
-            let correctDiv = document.createElement("div");
-            correctDiv.className = "correct-answer";
-            correctDiv.innerHTML = `✔ Đáp án đúng: ${optionsStore[i][correct[i]]}`;
-            qDiv.appendChild(correctDiv);
-        }
     }
 
     let percent = ((score / total) * 100).toFixed(1);
     document.getElementById("result").innerHTML = `
-        <div class="score-box">
-            <h2>KẾT QUẢ</h2>
-            <div class="percent">${percent}%</div>
-            <div>Đúng <b>${score}/${total}</b> câu</div>
+        <div style="background:#fff; padding:20px; border-radius:10px; text-align:center; margin-bottom:20px; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+            <h2 style="margin:0">KẾT QUẢ</h2>
+            <div style="font-size:40px; color:#dc3545; font-weight:bold;">${percent}%</div>
+            <p>Đúng ${score}/${total} câu</p>
+            <button class="btn-primary" onclick="location.reload()">LÀM ĐỀ KHÁC</button>
         </div>`;
     
-    document.getElementById("backBtn").classList.remove("hidden");
     if (window.MathJax) MathJax.typesetPromise();
     window.scrollTo(0,0);
 }
-
-function goBack(){ location.reload(); }
 </script>
 </body>
 </html>
