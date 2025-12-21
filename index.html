@@ -24,22 +24,52 @@
         #preExam { text-align:center; padding-top:80px; display:none; }
         #preExam button { font-size:28px; padding:20px 40px; }
         #examPage { display:none; }
-        .top-bar { display:flex; justify-content:space-between; align-items:center; margin:8px 0; flex-wrap:wrap; }
-        .timer { background:#ffeeba; padding:8px 14px; font-size:26px; font-weight:bold; color:#d00000; border-radius:10px; box-shadow:0 2px 6px rgba(0,0,0,0.25); margin-top:6px; }
-        .question { margin-bottom:18px; padding:10px; border-radius:6px; background:#fff; word-wrap:break-word; line-height:1.45; font-size:16px; }
-        .question b { display:block; margin-bottom:8px; }
-        label { display:block; margin-bottom:6px; font-size:15px; }
-        .unanswered { border:3px solid red; }
-        .correct { background-color:#d4edda; }
-        .wrong { background-color:#f8d7da; }
-        .selected-correct { color:#0a8a2a; font-weight:bold; }
-        .selected-wrong { color:#c00000; font-weight:bold; }
-        .correct-answer { color:green; font-weight:bold; margin-top:6px; }
-        .score-box { margin-top:20px; padding:18px; background:#fff; border-radius:12px; box-shadow:0 3px 10px rgba(0,0,0,0.15); text-align:center; }
-        .score-box h2 { margin:0; font-size:28px; color:#003366; }
-        .score-box .percent { font-size:44px; font-weight:bold; color:#d00000; margin:10px 0; }
-        button { padding:10px 18px; margin:6px 4px; font-size:15px; border-radius:6px; }
-        .hidden { display:none; }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            flex-wrap: wrap;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: white;
+            z-index: 9999;
+            padding: 10px 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+
+        #examPage {
+            padding-top: 80px;
+        }
+
+        .timer {
+            background: #ffeeba;
+            padding: 8px 14px;
+            font-size: 26px;
+            font-weight: bold;
+            color: #d00000;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            margin-top: 6px;
+        }
+
+        .question { margin-bottom: 18px; padding: 10px; border-radius: 6px; background: #fff; word-wrap: break-word; line-height: 1.45; font-size: 16px; }
+        .question b { display: block; margin-bottom: 8px; }
+        label { display: block; margin-bottom: 6px; font-size: 15px; }
+        .unanswered { border: 3px solid red; }
+        .correct { background-color: #d4edda; }
+        .wrong { background-color: #f8d7da; }
+        .selected-correct { color: #0a8a2a; font-weight: bold; }
+        .selected-wrong { color: #c00000; font-weight: bold; }
+        .correct-answer { color: green; font-weight: bold; margin-top: 6px; }
+        .score-box { margin-top: 20px; padding: 18px; background: #fff; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.15); text-align: center; }
+        .score-box h2 { margin: 0; font-size: 28px; color: #003366; }
+        .score-box .percent { font-size: 44px; font-weight: bold; color: #d00000; margin: 10px 0; }
+        button { padding: 10px 18px; margin: 6px 4px; font-size: 15px; border-radius: 6px; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
@@ -105,126 +135,141 @@ D. 0
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
-let answers={}, correct={}, optionsStore={}, timeLeft, timerInterval, submitted=false;
+let answers = {}, correct = {}, optionsStore = {}, timeLeft, timerInterval, submitted = false;
 
-function prepareExam(){
+function prepareExam() {
     const subject = document.getElementById("subject").value.trim();
     const minutes = parseInt(document.getElementById("timeLimit").value);
-    if(!subject || !minutes){ alert("Nhập đủ thông tin"); return; }
-    document.getElementById("setup").style.display="none";
-    document.getElementById("preExam").style.display="block";
-    document.getElementById("preSubject").innerText = "Môn thi: "+subject;
-    document.getElementById("preTime").innerText = "Thời gian làm bài: "+minutes+" phút";
+    if (!subject || !minutes) { 
+        alert("Nhập đủ thông tin"); 
+        return; 
+    }
+    document.getElementById("setup").style.display = "none";
+    document.getElementById("preExam").style.display = "block";
+    document.getElementById("preSubject").innerText = "Môn thi: " + subject;
+    document.getElementById("preTime").innerText = "Thời gian làm bài: " + minutes + " phút";
 }
 
-function startExam(){
-    document.getElementById("preExam").style.display="none";
-    document.getElementById("examPage").style.display="block";
+function startExam() {
+    document.getElementById("preExam").style.display = "none";
+    document.getElementById("examPage").style.display = "block";
 
-    let text=document.getElementById("inputText").value.trim();
-    let minutes=parseInt(document.getElementById("timeLimit").value);
-    timeLeft=minutes*60;
+    let text = document.getElementById("inputText").value.trim();
+    let minutes = parseInt(document.getElementById("timeLimit").value);
+    timeLeft = minutes * 60;
 
-    const blocks=text.split(/\n\s*\n/);
-    let examHtml="";
-    blocks.forEach((block,index)=>{
-        let lines=block.split("\n").map(l=>l.trim()).filter(Boolean);
-        let questionLines=[], options={}, answer="";
-        lines.forEach(line=>{
-            if(/^[ABCD]\./.test(line)) options[line[0]]=line;
-            else if(line.startsWith("Đáp án")) answer=line.split(":")[1].trim();
+    const blocks = text.split(/\n\s*\n/);
+    let examHtml = "";
+    blocks.forEach((block, index) => {
+        let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+        let questionLines = [], options = {}, answer = "";
+        lines.forEach(line => {
+            if (/^[ABCD]\./.test(line)) options[line[0]] = line;
+            else if (line.startsWith("Đáp án")) answer = line.split(":")[1].trim();
             else questionLines.push(line);
         });
-        if(!answer || Object.keys(options).length<4) return;
-        correct[index]=answer;
-        optionsStore[index]=options;
+        if (!answer || Object.keys(options).length < 4) return;
+        correct[index] = answer;
+        optionsStore[index] = options;
 
-        let html=`<div class="question" id="q${index}"><b>${questionLines.join("<br>")}</b>`;
-        ["A","B","C","D"].forEach(k=>{
-            html+=`<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
+        let html = `<div class="question" id="q${index}"><b>${questionLines.join("<br>")}</b>`;
+        ["A", "B", "C", "D"].forEach(k => {
+            html += `<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
         });
-        html+="</div>";
-        examHtml+=html;
+        html += "</div>";
+        examHtml += html;
     });
-    document.getElementById("exam").innerHTML=examHtml;
+    document.getElementById("exam").innerHTML = examHtml;
 
     // Render LaTeX sau khi nội dung được hiển thị
     MathJax.typesetPromise().then(() => {
-        // Các công thức toán học sẽ được render sau khi MathJax hoàn thành
         startTimer();
     }).catch((err) => {
         console.log("Error rendering LaTeX:", err);
     });
 }
 
-function startTimer(){
-    timerInterval=setInterval(()=>{
-        let m=Math.floor(timeLeft/60), s=timeLeft%60;
-        document.getElementById("timer").innerText=`${m}:${s<10?"0":""}${s}`;
-        if(timeLeft<=0){ clearInterval(timerInterval); alert("⏰ Hết giờ! Bài thi sẽ được nộp."); submitExam(); }
+function startTimer() {
+    timerInterval = setInterval(() => {
+        let m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+        document.getElementById("timer").innerText = `${m}:${s < 10 ? "0" : ""}${s}`;
+        if (timeLeft <= 0) { 
+            clearInterval(timerInterval); 
+            alert("⏰ Hết giờ! Bài thi sẽ được nộp."); 
+            submitExam(); 
+        }
         timeLeft--;
-    },1000);
+    }, 1000);
 }
 
-function checkProgress(){
-    let total=Object.keys(correct).length, done=0;
-    for(let i in correct){
-        let qDiv=document.getElementById("q"+i);
+function checkProgress() {
+    let total = Object.keys(correct).length, done = 0;
+    for (let i in correct) {
+        let qDiv = document.getElementById("q" + i);
         qDiv.classList.remove("unanswered");
-        if(answers[i]) done++;
+        if (answers[i]) done++;
         else qDiv.classList.add("unanswered");
     }
     alert(`Đã làm: ${done}/${total}`);
 }
 
-function submitExam(){
-    if(submitted) return;
-    submitted=true;
+function submitExam() {
+    if (submitted) return;
+    submitted = true;
     clearInterval(timerInterval);
 
-    let total=Object.keys(correct).length, score=0;
-    for(let i in correct){
-        let qDiv=document.getElementById("q"+i);
-        let radios=qDiv.querySelectorAll("input");
-        radios.forEach(r=>{
-            r.disabled=true;
-            let label=r.parentElement;
-            if(r.checked){
-                if(r.value===correct[i]) label.classList.add("selected-correct");
+    let total = Object.keys(correct).length, score = 0;
+    for (let i in correct) {
+        let qDiv = document.getElementById("q" + i);
+        let radios = qDiv.querySelectorAll("input");
+        radios.forEach(r => {
+            r.disabled = true;
+            let label = r.parentElement;
+            if (r.checked) {
+                if (r.value === correct[i]) label.classList.add("selected-correct");
                 else label.classList.add("selected-wrong");
             }
         });
-        if(answers[i]===correct[i]){ score++; qDiv.classList.add("correct"); }
-        else{ qDiv.classList.add("wrong"); qDiv.innerHTML+=`<div class="correct-answer">✔ Đáp án đúng: ${optionsStore[i][correct[i]]}</div>`; }
+        if (answers[i] === correct[i]) { 
+            score++; 
+            qDiv.classList.add("correct"); 
+        } else { 
+            qDiv.classList.add("wrong"); 
+            qDiv.innerHTML += `<div class="correct-answer">✔ Đáp án đúng: ${optionsStore[i][correct[i]]}</div>`; 
+        }
     }
 
-    let percent=((score/total)*100).toFixed(1);
-    document.getElementById("result").innerHTML=`<div class="score-box"><h2>KẾT QUẢ BÀI THI</h2><div class="percent">${percent}%</div><div>Số câu đúng: <b>${score}/${total}</b></div></div>`;
+    let percent = ((score / total) * 100).toFixed(1);
+    document.getElementById("result").innerHTML = `<div class="score-box"><h2>KẾT QUẢ BÀI THI</h2><div class="percent">${percent}%</div><div>Số câu đúng: <b>${score}/${total}</b></div></div>`;
     document.getElementById("backBtn").classList.remove("hidden");
     document.getElementById("exportPDF").classList.remove("hidden");
 
     MathJax.typesetPromise();
 }
 
-function goBack(){ location.reload(); }
+function goBack() { location.reload(); }
 
-async function exportPDF(){
+async function exportPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.setFont("helvetica");
     doc.setFontSize(14);
-    doc.text(`Môn thi: ${document.getElementById("subject").value}`,10,20);
-    doc.text(`Thời gian làm bài: ${document.getElementById("timeLimit").value} phút`,10,30);
-    let y=40;
-    for(let i in correct){
-        let userAnswer = answers[i]?answers[i]:"";
+    doc.text(`Môn thi: ${document.getElementById("subject").value}`, 10, 20);
+    doc.text(`Thời gian làm bài: ${document.getElementById("timeLimit").value} phút`, 10, 30);
+    let y = 40;
+    for (let i in correct) {
+        let userAnswer = answers[i] ? answers[i] : "";
         let correctAnswer = correct[i];
-        doc.text(`Câu ${parseInt(i)+1}: ${userAnswer} (Đáp án: ${correctAnswer})`,10,y);
-        y+=10;
-        if(y>270){ doc.addPage(); y=20; }
+        doc.text(`Câu ${parseInt(i) + 1}: ${userAnswer} (Đáp án: ${correctAnswer})`, 10, y);
+        y += 10;
+        if (y > 270) { 
+            doc.addPage(); 
+            y = 20; 
+        }
     }
     doc.save("ketqua.pdf");
 }
 </script>
+
 </body>
 </html>
