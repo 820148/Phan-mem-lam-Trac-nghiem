@@ -96,41 +96,46 @@ function prepareExam(){
     document.getElementById("preTime").innerText = "Thời gian làm bài: " + minutes + " phút";
 }
 
-function startExam(){
-    document.getElementById("preExam").style.display="none";
-    document.getElementById("examPage").style.display="block";
+function startExam() {
+    // 1. Chuyển đổi giao diện
+    document.getElementById("preExam").style.display = "none";
+    const examPage = document.getElementById("examPage");
+    examPage.style.display = "block";
 
+    // 2. Lấy dữ liệu và thiết lập thời gian
     let text = document.getElementById("inputText").value.trim();
     let minutes = parseInt(document.getElementById("timeLimit").value);
     timeLeft = minutes * 60;
 
-    // Tách các câu hỏi bằng dòng trống
+    // 3. Tách các câu hỏi (bằng dòng trống)
     const blocks = text.split(/\n\s*\n/);
     let examHtml = "";
-    
+
     blocks.forEach((block, index) => {
         let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
         let questionLines = [], options = {}, answer = "";
-        
+
         lines.forEach(line => {
-            if(/^[A-D]\./.test(line)) {
+            // Kiểm tra định dạng A. B. C. D.
+            if (/^[A-D]\./.test(line)) {
                 options[line[0]] = line;
-            } else if(line.toLowerCase().startsWith("đáp án")) {
+            } else if (line.toLowerCase().startsWith("đáp án")) {
                 let parts = line.split(":");
-                if(parts[1]) answer = parts[1].trim();
+                if (parts[1]) answer = parts[1].trim();
             } else {
                 questionLines.push(line);
             }
         });
 
-        if(!answer || Object.keys(options).length < 2) return;
-        
+        // Chỉ tạo câu hỏi nếu có đáp án và ít nhất 2 lựa chọn
+        if (!answer || Object.keys(options).length < 2) return;
+
         correct[index] = answer;
         optionsStore[index] = options;
 
-        let html = `<div class="question" id="q${index}"><b>Câu ${index+1}: ${questionLines.join("<br>")}</b>`;
-        ["A","B","C","D"].forEach(k => {
-            if(options[k]){
+        let html = `<div class="question" id="q${index}"><b>Câu ${index + 1}: ${questionLines.join("<br>")}</b>`;
+        ["A", "B", "C", "D"].forEach(k => {
+            if (options[k]) {
                 html += `<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
             }
         });
@@ -138,14 +143,103 @@ function startExam(){
         examHtml += html;
     });
 
+    // 4. Đưa nội dung vào trang web
     const examDiv = document.getElementById("exam");
     examDiv.innerHTML = examHtml;
-    
-    // Render LaTeX ngay khi tạo đề
-    if (window.MathJax) {
-        MathJax.typesetPromise([examDiv]);
+
+    // 5. Kỹ thuật Render LaTeX an toàn cho GitHub
+    if (window.MathJax && MathJax.typesetPromise) {
+        // Đợi một khoảng thời gian cực ngắn (0ms) để DOM thực sự cập nhật xong
+        setTimeout(() => {
+            MathJax.typesetPromise([examDiv])
+                .then(() => {
+                    console.log("LaTeX đã render thành công!");
+                })
+                .catch((err) => {
+                    console.error("Lỗi MathJax:", err.message);
+                    // Nếu lỗi (do script chưa load kịp), thử render lại sau 500ms
+                    setTimeout(() => MathJax.typesetPromise(), 500);
+                });
+        }, 50); 
+    } else {
+        console.warn("Thư viện MathJax chưa được tải.");
     }
-    
+
+    startTimer();
+}function startExam(){
+    document.getElementById("preExam").style.display="none";
+    document.getElementById("examPage").style.display="block";
+
+    let text = document.getElementById("inputText").value.trim();
+function startExam() {
+    // 1. Chuyển đổi giao diện
+    document.getElementById("preExam").style.display = "none";
+    const examPage = document.getElementById("examPage");
+    examPage.style.display = "block";
+
+    // 2. Lấy dữ liệu và thiết lập thời gian
+    let text = document.getElementById("inputText").value.trim();
+    let minutes = parseInt(document.getElementById("timeLimit").value);
+    timeLeft = minutes * 60;
+
+    // 3. Tách các câu hỏi (bằng dòng trống)
+    const blocks = text.split(/\n\s*\n/);
+    let examHtml = "";
+
+    blocks.forEach((block, index) => {
+        let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+        let questionLines = [], options = {}, answer = "";
+
+        lines.forEach(line => {
+            // Kiểm tra định dạng A. B. C. D.
+            if (/^[A-D]\./.test(line)) {
+                options[line[0]] = line;
+            } else if (line.toLowerCase().startsWith("đáp án")) {
+                let parts = line.split(":");
+                if (parts[1]) answer = parts[1].trim();
+            } else {
+                questionLines.push(line);
+            }
+        });
+
+        // Chỉ tạo câu hỏi nếu có đáp án và ít nhất 2 lựa chọn
+        if (!answer || Object.keys(options).length < 2) return;
+
+        correct[index] = answer;
+        optionsStore[index] = options;
+
+        let html = `<div class="question" id="q${index}"><b>Câu ${index + 1}: ${questionLines.join("<br>")}</b>`;
+        ["A", "B", "C", "D"].forEach(k => {
+            if (options[k]) {
+                html += `<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
+            }
+        });
+        html += "</div>";
+        examHtml += html;
+    });
+
+    // 4. Đưa nội dung vào trang web
+    const examDiv = document.getElementById("exam");
+    examDiv.innerHTML = examHtml;
+
+    // 5. Kỹ thuật Render LaTeX an toàn cho GitHub
+    if (window.MathJax && MathJax.typesetPromise) {
+        // Đợi một khoảng thời gian cực ngắn (0ms) để DOM thực sự cập nhật xong
+        setTimeout(() => {
+            MathJax.typesetPromise([examDiv])
+                .then(() => {
+                    console.log("LaTeX đã render thành công!");
+                })
+                .catch((err) => {
+                    console.error("Lỗi MathJax:", err.message);
+                    // Nếu lỗi (do script chưa load kịp), thử render lại sau 500ms
+                    setTimeout(() => MathJax.typesetPromise(), 500);
+                });
+        }, 50); 
+    } else {
+        console.warn("Thư viện MathJax chưa được tải.");
+    }
+
     startTimer();
 }
 
