@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -6,16 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Phần mềm thi trắc nghiệm</title>
 
-<script>
-    window.MathJax = {
-        tex: {
-            inlineMath: [['$', '$'], ['\\(', '\\)']],
-            displayMath: [['$$', '$$'], ['\\[', '\\]']]
-        },
-        svg: { fontCache: 'global' }
-    };
-</script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+            },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
         html, body { margin:0; font-family: Arial, sans-serif; background:#f8f9fa; }
@@ -42,6 +46,8 @@
         button:hover { background: #eee; }
         .btn-primary { background: #007bff; color: white; border: none; }
         .hidden { display:none; }
+        /* Đảm bảo công thức toán không bị tràn màn hình mobile */
+        mjx-container { max-width: 100% !important; overflow-x: auto !important; overflow-y: hidden !important; }
     </style>
 </head>
 <body>
@@ -55,7 +61,13 @@
     <input type="number" id="timeLimit" value="10" min="1" style="padding:8px;">
     <br><br>
     <label>Đề thi (Mỗi câu cách nhau 1 dòng trống):</label>
-    <textarea id="inputText" placeholder="Câu 1: ..."></textarea>
+    <textarea id="inputText" placeholder="Ví dụ:
+Câu 1: Tính tích phân $\int_{0}^{1} x^2 dx$
+A. 1/3
+B. 1/2
+C. 1
+D. 0
+Đáp án: A"></textarea>
     <br>
     <button class="btn-primary" onclick="prepareExam()">Tạo đề thi</button>
 </div>
@@ -116,7 +128,6 @@ function startExam() {
         let questionLines = [], options = {}, answer = "";
 
         lines.forEach(line => {
-            // Kiểm tra định dạng A. B. C. D.
             if (/^[A-D]\./.test(line)) {
                 options[line[0]] = line;
             } else if (line.toLowerCase().startsWith("đáp án")) {
@@ -127,7 +138,6 @@ function startExam() {
             }
         });
 
-        // Chỉ tạo câu hỏi nếu có đáp án và ít nhất 2 lựa chọn
         if (!answer || Object.keys(options).length < 2) return;
 
         correct[index] = answer;
@@ -143,101 +153,14 @@ function startExam() {
         examHtml += html;
     });
 
-    // 4. Đưa nội dung vào trang web
     const examDiv = document.getElementById("exam");
     examDiv.innerHTML = examHtml;
 
-    // 5. Kỹ thuật Render LaTeX an toàn cho GitHub
+    // 4. Kỹ thuật Render LaTeX an toàn
     if (window.MathJax && MathJax.typesetPromise) {
-        // Đợi một khoảng thời gian cực ngắn (0ms) để DOM thực sự cập nhật xong
         setTimeout(() => {
-            MathJax.typesetPromise([examDiv])
-                .then(() => {
-                    console.log("LaTeX đã render thành công!");
-                })
-                .catch((err) => {
-                    console.error("Lỗi MathJax:", err.message);
-                    // Nếu lỗi (do script chưa load kịp), thử render lại sau 500ms
-                    setTimeout(() => MathJax.typesetPromise(), 500);
-                });
-        }, 50); 
-    } else {
-        console.warn("Thư viện MathJax chưa được tải.");
-    }
-
-    startTimer();
-}function startExam(){
-    document.getElementById("preExam").style.display="none";
-    document.getElementById("examPage").style.display="block";
-
-    let text = document.getElementById("inputText").value.trim();
-function startExam() {
-    // 1. Chuyển đổi giao diện
-    document.getElementById("preExam").style.display = "none";
-    const examPage = document.getElementById("examPage");
-    examPage.style.display = "block";
-
-    // 2. Lấy dữ liệu và thiết lập thời gian
-    let text = document.getElementById("inputText").value.trim();
-    let minutes = parseInt(document.getElementById("timeLimit").value);
-    timeLeft = minutes * 60;
-
-    // 3. Tách các câu hỏi (bằng dòng trống)
-    const blocks = text.split(/\n\s*\n/);
-    let examHtml = "";
-
-    blocks.forEach((block, index) => {
-        let lines = block.split("\n").map(l => l.trim()).filter(Boolean);
-        let questionLines = [], options = {}, answer = "";
-
-        lines.forEach(line => {
-            // Kiểm tra định dạng A. B. C. D.
-            if (/^[A-D]\./.test(line)) {
-                options[line[0]] = line;
-            } else if (line.toLowerCase().startsWith("đáp án")) {
-                let parts = line.split(":");
-                if (parts[1]) answer = parts[1].trim();
-            } else {
-                questionLines.push(line);
-            }
-        });
-
-        // Chỉ tạo câu hỏi nếu có đáp án và ít nhất 2 lựa chọn
-        if (!answer || Object.keys(options).length < 2) return;
-
-        correct[index] = answer;
-        optionsStore[index] = options;
-
-        let html = `<div class="question" id="q${index}"><b>Câu ${index + 1}: ${questionLines.join("<br>")}</b>`;
-        ["A", "B", "C", "D"].forEach(k => {
-            if (options[k]) {
-                html += `<label><input type="radio" name="q${index}" value="${k}" onchange="answers[${index}]='${k}'"> ${options[k]}</label>`;
-            }
-        });
-        html += "</div>";
-        examHtml += html;
-    });
-
-    // 4. Đưa nội dung vào trang web
-    const examDiv = document.getElementById("exam");
-    examDiv.innerHTML = examHtml;
-
-    // 5. Kỹ thuật Render LaTeX an toàn cho GitHub
-    if (window.MathJax && MathJax.typesetPromise) {
-        // Đợi một khoảng thời gian cực ngắn (0ms) để DOM thực sự cập nhật xong
-        setTimeout(() => {
-            MathJax.typesetPromise([examDiv])
-                .then(() => {
-                    console.log("LaTeX đã render thành công!");
-                })
-                .catch((err) => {
-                    console.error("Lỗi MathJax:", err.message);
-                    // Nếu lỗi (do script chưa load kịp), thử render lại sau 500ms
-                    setTimeout(() => MathJax.typesetPromise(), 500);
-                });
-        }, 50); 
-    } else {
-        console.warn("Thư viện MathJax chưa được tải.");
+            MathJax.typesetPromise([examDiv]).catch((err) => console.log(err));
+        }, 100);
     }
 
     startTimer();
